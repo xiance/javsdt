@@ -4,7 +4,7 @@ import os
 from os.path import exists
 from shutil import copyfile
 
-from Functions.Record import record_video_old, record_fail
+from javsdt.Functions.Record import record_video_old, record_fail
 
 
 # 功能：2归类影片，只针对视频文件和字幕文件，无视它们当前所在文件夹
@@ -44,11 +44,11 @@ def classify_link_files(jav, num_fail, settings, dict_data, list_classify_basis,
         name_without_ext += str_cd
         dict_data['视频'] = name_without_ext  # 【更新】 dict_data['视频']
 
-        path_new = root_dest + sep + jav.name  # 【临时变量】新的影片路径
+        path_new = root_dest + sep + name_without_ext + jav.type  # 【临时变量】新的影片路径
         # 目标文件夹没有相同的影片，防止用户已经有一个“avop-127.mp4”，现在又来一个
         if not exists(path_new):
             rename(jav.path, path_new)
-            symlink(path_new, relpath(root_dest, jav.path))
+            symlink(jav.path, relpath(jav.root, path_new))
             print('    >归类视频文件完成')
             # 移动字幕
             if jav.subtitle:

@@ -118,6 +118,11 @@ dict_data, list_classify_basis = perfect_dict_data(list_extra_genres, list_name_
 # 优化特征的字典
 dict_genre = better_dict_genre('Javlibrary', to_language)
 
+# 选择归类目标文件夹
+print('请选择要归类的目标文件夹：', end='')
+tmp_custom_root = choose_directory()
+print(tmp_custom_root)
+settings._custom_root = tmp_custom_root
 
 # 用户输入“回车”就继续选择文件夹整理
 input_start_key = ''
@@ -488,9 +493,6 @@ while input_start_key == '':
                 except FileExistsError:
                     num_fail += 1
                     continue
-
-                # 2.1 归类影片+，主要针对视频文件，将视频文件进行移动，进行统一放置，并在原视频位置创建一个“软链接”。字幕文件可冗余一份
-                # TODO : 待补充实现
 
                 # 3重命名文件夹。如果是针对“文件”归类（即第2步），这一步会被跳过，因为用户只需要归类视频文件，不需要管文件夹。
                 try:
