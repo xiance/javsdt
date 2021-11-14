@@ -55,7 +55,7 @@ def classify_link_files(jav, num_fail, settings, dict_data, list_classify_basis,
                 path_subtitle_new = root_dest + sep + name_without_ext + jav.subtitle_type  # 【临时变量】新的字幕路径
                 if jav.path_subtitle != path_subtitle_new:
                     if not exists(path_subtitle_new):
-                        copyfile(relpath(root_dest, jav.path_subtitle), path_subtitle_new)
+                        copyfile(jav.path_subtitle, path_subtitle_new)
                     jav.subtitle = name_without_ext + jav.subtitle_type
                     # 不再更新 jav.path_subtitle，下面不会再操作 字幕文件
                     print('    >归类字幕文件完成')
