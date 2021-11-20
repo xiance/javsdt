@@ -3,6 +3,7 @@ from os import sep, makedirs, rename, symlink
 import os
 from os.path import exists
 from shutil import copyfile
+from configparser import RawConfigParser
 
 from javsdt.Functions.Record import record_video_old, record_fail
 
@@ -17,17 +18,23 @@ def classify_link_files(jav, num_fail, settings, dict_data, list_classify_basis,
     if settings.bool_classify and not settings.bool_classify_folder:
         # 移动的目标文件夹路径
         root_dest = root_classify + sep
+        new_folder = ''
         for j in list_classify_basis:
             # 针对演员不明的情况做特殊处理
             if '演员' in j and '演员' in dict_data[j]:
                 continue
             else:
-                root_dest += dict_data[j].rstrip()  # 【临时变量】归类的目标文件夹路径    C:\Users\JuneRain\Desktop\测试文件夹\葵司\
+                new_folder += dict_data[j].rstrip()  # 【临时变量】归类的目标文件夹路径    C:\Users\JuneRain\Desktop\测试文件夹\葵司\
         # 演员名字以"_"分隔，可能出现连续两个无效演员名字的情况，需要将多余的"_"进行删除
-        root_dest = str.replace(root_dest, '__', '_')
+        new_folder = str.replace(new_folder, '__', '_')
         # 如果以 '/' 结尾，则删除
-        if root_dest.endswith(sep):
-            root_dest = root_dest[0:-1]
+        if new_folder.endswith(sep):
+            new_folder = new_folder[0:-1]
+        # 如果以 '_' 结尾，则删除
+        if new_folder.endswith('_'):
+            new_folder = new_folder[0:-1]
+
+        root_dest += new_folder
         # 还不存在该文件夹，新建
         if not exists(root_dest):
             makedirs(root_dest)
@@ -48,7 +55,8 @@ def classify_link_files(jav, num_fail, settings, dict_data, list_classify_basis,
         # 目标文件夹没有相同的影片，防止用户已经有一个“avop-127.mp4”，现在又来一个
         if not exists(path_new):
             rename(jav.path, path_new)
-            symlink(jav.path, relpath(jav.root, path_new))
+            symlink(relpath(jav.root, path_new), jav.path)
+            jav.name = name_without_ext + jav.type
             print('    >归类视频文件完成')
             # 移动字幕
             if jav.subtitle:
@@ -65,6 +73,41 @@ def classify_link_files(jav, num_fail, settings, dict_data, list_classify_basis,
             record_fail('    >第' + str(num_fail) + '个失败！归类失败，重复的影片，归类的目标文件夹已经存在相同的影片：' + path_new + '\n')
             raise FileExistsError  # 【终止对该jav的整理】
     return jav, num_fail
+
+
+# 功能：6为当前jav收集演员头像到“.actors”文件夹中
+# 参数：演员们 list_actors，jav当前所处文件夹的路径root_now
+# 返回：无
+# 辅助：os.path.exists，os.makedirs, configparser.RawConfigParser, shutil.copyfile
+def collect_sculpture_fix(list_actors, root_now):
+    for each_actor in list_actors:
+        path_exist_actor = '演员头像' + sep + each_actor[0] + sep + each_actor  # 事先准备好的演员头像路径
+        if exists(path_exist_actor + '.jpg'):
+            pic_type = '.jpg'
+        elif exists(path_exist_actor + '.png'):
+            pic_type = '.png'
+        else:
+            config_actor = RawConfigParser()
+            config_actor.read('【缺失的演员头像统计For Kodi】.ini', encoding='utf-8-sig')
+            try:
+                if not config_actor.has_section('缺失的演员头像'):
+                    config_actor.add_section('缺失的演员头像')
+                if config_actor.has_option('缺失的演员头像', each_actor):
+                    each_actor_times = config_actor.get('缺失的演员头像', each_actor)
+                    config_actor.set("缺失的演员头像", each_actor, str(int(each_actor_times) + 1))
+                else:
+                    config_actor.set('缺失的演员头像', each_actor, '1')
+            except:
+                config_actor.set("缺失的演员头像", each_actor, '1')
+            config_actor.write(open('【缺失的演员头像统计For Kodi】.ini', "w", encoding='utf-8-sig'))
+            continue
+        # 已经收录了这个演员头像
+        root_dest_actor = root_now + sep + '.actors' + sep  # 头像的目标文件夹
+        if not exists(root_dest_actor):
+            makedirs(root_dest_actor)
+        # 复制一份到“.actors”
+        copyfile(path_exist_actor + pic_type, root_dest_actor + each_actor + pic_type)
+        print('    >演员头像收集完成：', each_actor)
 
 
 def all_equal(elements):

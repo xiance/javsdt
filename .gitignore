@@ -1,7 +1,10 @@
 .idea
+.DS_Store
+*/.DS_Store
 venv
 
 javsdt/【可删除】失败记录.txt
 javsdt/【可删除】新旧文件名清单.txt
 javsdt/【可删除】警告信息.txt
 javsdt/【特征对照表】.xlsx
+**/__pycache__

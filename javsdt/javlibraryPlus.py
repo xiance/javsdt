@@ -9,8 +9,8 @@ from Functions.Status import judge_exist_nfo, judge_exist_extra_folders, count_n
 from Functions.User import choose_directory
 from Functions.Record import record_start, record_fail, record_warn
 from Functions.Process import perfect_dict_data
-from Functions.Standard import rename_mp4, rename_folder, classify_files, classify_folder
-from Functions.StandardPlus import classify_link_files
+from Functions.Standard import rename_mp4, rename_folder, classify_folder
+from Functions.StandardPlus import classify_link_files, collect_sculpture_fix
 from Functions.XML import replace_xml, replace_xml_win
 from Functions.Process import judge_exist_subtitle
 from Functions.Picture import check_picture, add_watermark_subtitle
@@ -20,7 +20,6 @@ from Functions.Genre import better_dict_genre
 from Functions.Process import judge_exist_divulge
 from Functions.Status import check_actors
 from Functions.Car import find_car_library, list_suren_car
-from Functions.Standard import collect_sculpture
 from Functions.Baidu import translate
 from Functions.Picture import add_watermark_divulge, crop_poster_youma
 from Functions.Requests.JavlibraryReq import get_library_html
@@ -119,10 +118,10 @@ dict_data, list_classify_basis = perfect_dict_data(list_extra_genres, list_name_
 dict_genre = better_dict_genre('Javlibrary', to_language)
 
 # 选择归类目标文件夹
-print('请选择要归类的目标文件夹：', end='')
-tmp_custom_root = choose_directory()
-print(tmp_custom_root)
-settings._custom_root = tmp_custom_root
+# print('请选择要归类的目标文件夹：', end='')
+# tmp_custom_root = choose_directory()
+# print(tmp_custom_root)
+# settings._custom_root = tmp_custom_root
 
 # 用户输入“回车”就继续选择文件夹整理
 input_start_key = ''
@@ -241,7 +240,8 @@ while input_start_key == '':
             bool_unique = True  # javlibrary有唯一的搜素结果。如果 bool_unique 变化为 false，就不会去javbus下载图片。
 
             # 判定当前影片是否已经完成处理，为了避免 .nfo 文件冲突，改用 .done 后缀，文件名与视频文件名保持一致 by @xc1987
-            if os.path.exists(jav.path_subtitle + jav.name_no_ext + '.done'):
+            if os.path.exists(jav.path_subtitle + jav.name_no_ext + '.DONE'):
+                print('    >发现已处理标记文件，跳过处理：', jav.name_no_ext)
                 continue
 
             # 获取nfo信息的javlibrary网页
@@ -467,6 +467,7 @@ while input_start_key == '':
                 #######################################################################
                 dict_data['视频'] = dict_data['原文件名'] = jav.name_no_ext  # dict_data['视频']，先定义为原文件名，即将发生变化。
                 dict_data['原文件夹名'] = jav.folder
+                dict_data['原文件目录'] = jav.root
                 # 是CD1还是CDn？
                 num_all_episodes = dict_car_pref[jav.car]  # 该车牌总共多少集
                 if num_all_episodes > 1:
@@ -646,7 +647,7 @@ while input_start_key == '':
                     if actors[0] == '有码演员':
                         print('    >未知演员，无法收集头像')
                     else:
-                        collect_sculpture(actors, jav.root)
+                        collect_sculpture_fix(actors, jav.root)
                 # 7归类影片，针对文件夹【相同】
                 try:
                     num_temp = classify_folder(jav, num_fail, settings, dict_data, list_classify_basis, root_classify,
@@ -655,6 +656,10 @@ while input_start_key == '':
                 except FileExistsError:
                     num_fail += 1
                     continue
+
+                # 拷贝一份 nfo 文件，用于标识已完成处理
+                copyfile(path_nfo, dict_data['原文件目录'] + sep + dict_data['原文件名'] + '.DONE')
+                print('    >处理完成标记文件生成')
 
             except:
                 num_fail += 1
